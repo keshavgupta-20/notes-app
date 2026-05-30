@@ -1,21 +1,15 @@
-FROM python:3.9
+FROM python:3.9-slim
 
-WORKDIR /app/backend
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-COPY requirements.txt /app/backend
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y gcc default-libmysqlclient-dev pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-
-# Install app dependencies
-RUN pip install mysqlclient
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /app/backend
+COPY . /app/
 
 EXPOSE 8000
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
-#RUN python manage.py migrate
-#RUN python manage.py makemigrations
+
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn notesapp.wsgi:application --bind 0.0.0.0:8000"]
